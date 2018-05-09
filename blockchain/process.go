@@ -7,8 +7,10 @@ package blockchain
 
 import (
 	"fmt"
+    "os"
+    "path/filepath"
 	"time"
-
+	
 	"github.com/decred/dcrd/chaincfg/chainhash"
 	"github.com/decred/dcrd/database"
 	"github.com/decred/dcrd/dcrutil"
@@ -237,6 +239,15 @@ func (b *BlockChain) ProcessBlock(block *dcrutil.Block, flags BehaviorFlags) (bo
 	isMainChain, err := b.maybeAcceptBlock(block, flags)
 	if err != nil {
 		return false, false, err
+	}
+
+	if isMainChain {
+		touchFile := filepath.Join(dcrutil.AppDataDir("dcrd", false), "block_notify")
+		f, err := os.Create(touchFile)
+		if err == nil {
+			// open file successful
+			f.Close()
+		}
 	}
 
 	// Accept any orphan blocks that depend on this block (they are no
