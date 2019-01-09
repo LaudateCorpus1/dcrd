@@ -1139,7 +1139,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress dcrutil.Address) (*Bloc
 		eligibleParents := SortParentsByVotes(g.txSource, prevHash, children,
 			g.chainParams)
 		if len(eligibleParents) == 0 {
-			minrLog.Debugf("Too few voters found on any HEAD block, " +
+			minrLog.Infof("Too few voters found on any HEAD block, " +
 				"recycling a parent block to mine on")
 			return handleTooFewVoters(subsidyCache, nextBlockHeight,
 				payToAddress, g.blockManager)

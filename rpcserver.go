@@ -25,6 +25,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
@@ -2182,6 +2183,19 @@ func (state *gbtWorkState) notifyLongPollers(latestHash *chainhash.Hash, lastGen
 	// Notify anything that is waiting for a block template update from a
 	// hash which is not the hash of the tip of the best chain since their
 	// work is now invalid.
+
+	touch := func() {
+		//time.Sleep(time.Second)
+		touchFile := filepath.Join(dcrutil.AppDataDir("dcrd", false), "block_notify")
+		f, err := os.Create(touchFile)
+		if err == nil {
+			// open file successful
+			f.Close()
+		}
+		rpcsLog.Infof("Blockin : touch file . first touch : %s", latestHash.String())
+	}
+	defer touch()
+
 	for hash, channels := range state.notifyMap {
 		if !hash.IsEqual(latestHash) {
 			for _, c := range channels {
@@ -4016,16 +4030,40 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 	lastTxUpdate := s.server.txMemPool.LastUpdated()
 	best := s.server.blockManager.chain.BestSnapshot()
 	msgBlock := state.msgBlock
+	/*
+		latestHashString := func() string {
+			if latestHash == nil {
+				return ""
+			}
+			return latestHash.String()
+		}()
 
+		latestHeightString := func() string {
+			if latestHeight == 0 {
+				return "0 -- invalid"
+			}
+			return strconv.Itoa(int(latestHeight))
+		}()
+
+		msgBlockString := func() string {
+			if msgBlock == nil {
+				return ""
+			}
+			return fmt.Sprintf("%+v", msgBlock)
+		}()
+		rpcsLog.Infof("Blockin : -- gen new get work msg. latest Hash : %s. latest height : %s. msg block : %s ", latestHashString, latestHeightString, msgBlockString)
+	*/
 	// The current code pulls down a new template every second, however
 	// with a large mempool this will be pretty excruciating sometimes. It
 	// should examine whether or not a new template needs to be created
 	// based on the votes present every second or so, and then, if needed,
 	// generate a new block template. TODO cj
+
 	if msgBlock == nil || state.prevHash == nil ||
 		!state.prevHash.IsEqual(&best.Hash) ||
 		(state.lastTxUpdate != lastTxUpdate &&
-			time.Now().After(state.lastGenerated.Add(time.Second))) {
+			time.Now().After(state.lastGenerated.Add(time.Second))) ||
+		s.isForceUpdateTemplate {
 		// Reset the extra nonce and clear all expired cached template
 		// variations if the best block changed.
 		if state.prevHash != nil && !state.prevHash.IsEqual(&best.Hash) {
@@ -4071,6 +4109,38 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 			msgBlock.Header.Timestamp, state.extraNonce,
 			blockchain.CompactToBig(msgBlock.Header.Bits),
 			msgBlock.Header.MerkleRoot)
+
+		loopForNewHeight := func() {
+			for {
+				LHash, _ := s.server.blockManager.chainState.Best()
+				children, err := s.server.blockManager.TipGeneration()
+				if err != nil {
+					rpcsLog.Infof("Obtain the entire generation of blocks stemming from this parent error")
+					continue
+				}
+				var txSource mining.TxSource = s.server.txMemPool
+				eligibleParents := SortParentsByVotes(txSource, *LHash, children,
+					s.server.chainParams)
+				if len(eligibleParents) > 0 {
+					rpcsLog.Infof("Blockin : touch file to notify gbtmaker hash : %s", LHash.String())
+					break
+				}
+				time.Sleep(time.Microsecond * 100)
+			}
+			touchFile := filepath.Join(dcrutil.AppDataDir("dcrd", false), "block_notify")
+			f, err := os.Create(touchFile)
+			if err == nil {
+				// open file successful
+				f.Close()
+			}
+		}
+		if !msgBlock.Header.PrevBlock.IsEqual(latestHash) {
+			defer func() {
+				go loopForNewHeight()
+			}()
+		} else {
+			s.isForceUpdateTemplate = false
+		}
 	} else {
 		if msgBlock == nil {
 			context := "Failed to create new block template, " +
@@ -5782,6 +5852,7 @@ type rpcServer struct {
 	helpCacher             *helpCacher
 	requestProcessShutdown chan struct{}
 	quit                   chan int
+	isForceUpdateTemplate  bool
 }
 
 // httpStatusLine returns a response Status-Line (RFC 2616 Section 6.1) for the
