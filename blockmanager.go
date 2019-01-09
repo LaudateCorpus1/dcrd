@@ -1141,6 +1141,12 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 			if rpcServer != nil {
 				rpcServer.gbtWorkState.NotifyBlockConnected(blockHash)
 			}
+			touchFile := filepath.Join(dcrutil.AppDataDir("dcrd", false), "block_notify")
+			f, err := os.Create(touchFile)
+			if err == nil {
+				// open file successful
+				f.Close()
+			}
 		}
 	}
 
