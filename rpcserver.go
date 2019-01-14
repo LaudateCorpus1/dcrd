@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"math/big"
 	"math/rand"
@@ -4061,7 +4062,7 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 	// based on the votes present every second or so, and then, if needed,
 	// generate a new block template. TODO cj
 
-	rpcsLog.Infof("get work block : %s, prev hash : %s, latest hash : %s, latestHeight : %n", msgBlock.Header.BlockHash().String(), state.prevHash.String(), latestHash.String(), latestHeight)
+	log.Printf("get work block : %s, prev hash : %s, latest hash : %s, latestHeight : %n", msgBlock.Header.BlockHash().String(), state.prevHash.String(), latestHash.String(), latestHeight)
 	if msgBlock == nil || state.prevHash == nil ||
 		!state.prevHash.IsEqual(latestHash) ||
 		(state.lastTxUpdate != lastTxUpdate &&
