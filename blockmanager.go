@@ -1142,7 +1142,7 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 				rpcServer.gbtWorkState.NotifyBlockConnected(blockHash)
 			}
 			touch := func() {
-				time.Sleep(time.Second)
+				//time.Sleep(time.Second)
 				touchFile := filepath.Join(dcrutil.AppDataDir("dcrd", false), "block_notify")
 				f, err := os.Create(touchFile)
 				if err == nil {

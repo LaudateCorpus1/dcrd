@@ -4060,6 +4060,8 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 	// should examine whether or not a new template needs to be created
 	// based on the votes present every second or so, and then, if needed,
 	// generate a new block template. TODO cj
+
+	rpcsLog.Infof("get work block : %s, prev hash : %s, latest hash : %s, latestHeight : %n", msgBlock.Header.BlockHash().String(), state.prevHash.String(), latestHash.String(), latestHeight)
 	if msgBlock == nil || state.prevHash == nil ||
 		!state.prevHash.IsEqual(latestHash) ||
 		(state.lastTxUpdate != lastTxUpdate &&
@@ -6448,7 +6450,7 @@ func newRPCServer(listenAddrs []string, policy *mining.Policy, s *server) (*rpcS
 		gbtWorkState:           newGbtWorkState(s.timeSource),
 		helpCacher:             newHelpCacher(),
 		requestProcessShutdown: make(chan struct{}),
-		quit: make(chan int),
+		quit:                   make(chan int),
 	}
 	if cfg.RPCUser != "" && cfg.RPCPass != "" {
 		login := cfg.RPCUser + ":" + cfg.RPCPass
