@@ -1142,13 +1142,14 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 				rpcServer.gbtWorkState.NotifyBlockConnected(blockHash)
 			}
 			touch := func() {
-				time.Sleep(time.Microsecond * 500)
+				time.Sleep(time.Second)
 				touchFile := filepath.Join(dcrutil.AppDataDir("dcrd", false), "block_notify")
 				f, err := os.Create(touchFile)
 				if err == nil {
 					// open file successful
 					f.Close()
 				}
+				bmgrLog.Warnf("touch file to notify gbtmaker hash : %s , height : %n", best.Hash.String(), best.Height)
 			}
 			go touch()
 		}
