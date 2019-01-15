@@ -4087,7 +4087,7 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 		if msgBlock == nil {
 			return ""
 		}
-		return fmt.Sprintf("%v", msgBlock)
+		return fmt.Sprintf("%+v", msgBlock)
 	}()
 	rpcsLog.Infof("Blockin : -- gen new get work msg. latest Hash : %s. latest height : %s. msg block : %s ", latestHashString, latestHeightString, msgBlockString)
 

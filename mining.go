@@ -1149,7 +1149,7 @@ func NewBlockTemplate(policy *mining.Policy, server *server, payToAddress dcruti
 		eligibleParents := SortParentsByVotes(txSource, *prevHash, children,
 			blockManager.server.chainParams)
 		if len(eligibleParents) == 0 {
-			minrLog.Debugf("Too few voters found on any HEAD block, " +
+			minrLog.Infof("Too few voters found on any HEAD block, " +
 				"recycling a parent block to mine on")
 			return handleTooFewVoters(subsidyCache, nextBlockHeight,
 				payToAddress, server.blockManager)
