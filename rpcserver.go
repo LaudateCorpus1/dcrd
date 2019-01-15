@@ -4069,6 +4069,28 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 	latestHash, latestHeight := s.server.blockManager.chainState.Best()
 	msgBlock := state.msgBlock
 
+	latestHashString := func() string {
+		if latestHash == nil {
+			return ""
+		}
+		return latestHash.String()
+	}()
+
+	latestHeightString := func() string {
+		if latestHeight == 0 {
+			return "0 -- invalid"
+		}
+		return strconv.Itoa(int(latestHeight))
+	}()
+
+	msgBlockString := func() string {
+		if msgBlock == nil {
+			return ""
+		}
+		return fmt.Sprintf("%v", msgBlock)
+	}()
+	rpcsLog.Infof("Blockin : -- gen new get work msg. latest Hash : %s. latest height : %s. msg block : %s ", latestHashString, latestHeightString, msgBlockString)
+
 	// The current code pulls down a new template every second, however
 	// with a large mempool this will be pretty excruciating sometimes. It
 	// should examine whether or not a new template needs to be created
