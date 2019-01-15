@@ -4068,29 +4068,29 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 	lastTxUpdate := s.server.txMemPool.LastUpdated()
 	latestHash, latestHeight := s.server.blockManager.chainState.Best()
 	msgBlock := state.msgBlock
+	/*
+		latestHashString := func() string {
+			if latestHash == nil {
+				return ""
+			}
+			return latestHash.String()
+		}()
 
-	latestHashString := func() string {
-		if latestHash == nil {
-			return ""
-		}
-		return latestHash.String()
-	}()
+		latestHeightString := func() string {
+			if latestHeight == 0 {
+				return "0 -- invalid"
+			}
+			return strconv.Itoa(int(latestHeight))
+		}()
 
-	latestHeightString := func() string {
-		if latestHeight == 0 {
-			return "0 -- invalid"
-		}
-		return strconv.Itoa(int(latestHeight))
-	}()
-
-	msgBlockString := func() string {
-		if msgBlock == nil {
-			return ""
-		}
-		return fmt.Sprintf("%+v", msgBlock)
-	}()
-	rpcsLog.Infof("Blockin : -- gen new get work msg. latest Hash : %s. latest height : %s. msg block : %s ", latestHashString, latestHeightString, msgBlockString)
-
+		msgBlockString := func() string {
+			if msgBlock == nil {
+				return ""
+			}
+			return fmt.Sprintf("%+v", msgBlock)
+		}()
+		rpcsLog.Infof("Blockin : -- gen new get work msg. latest Hash : %s. latest height : %s. msg block : %s ", latestHashString, latestHeightString, msgBlockString)
+	*/
 	// The current code pulls down a new template every second, however
 	// with a large mempool this will be pretty excruciating sometimes. It
 	// should examine whether or not a new template needs to be created
@@ -4134,6 +4134,32 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 		templateCopy := deepCopyBlockTemplate(template)
 		msgBlock = templateCopy.Block
 
+		loopForNewHeight := func() {
+			for {
+				children, err := s.server.blockManager.TipGeneration()
+				if err != nil {
+					rpcsLog.Infof("Obtain the entire generation of blocks stemming from this parent error")
+					continue
+				}
+				var txSource mining.TxSource = s.server.txMemPool
+				eligibleParents := SortParentsByVotes(txSource, *latestHash, children,
+					s.server.chainParams)
+				if len(eligibleParents) != 0 {
+					break
+				}
+				time.Sleep(time.Microsecond * 100)
+			}
+			touchFile := filepath.Join(dcrutil.AppDataDir("dcrd", false), "block_notify")
+			f, err := os.Create(touchFile)
+			if err == nil {
+				// open file successful
+				f.Close()
+			}
+			rpcsLog.Infof("touch file to notify gbtmaker hash : %s", latestHash.String())
+		}
+		if !msgBlock.Header.PrevBlock.IsEqual(latestHash) {
+			go loopForNewHeight()
+		}
 		// Update work state to ensure another block template isn't
 		// generated until needed.
 		state.msgBlock = msgBlock
