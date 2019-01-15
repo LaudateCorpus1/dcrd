@@ -25,6 +25,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
@@ -2227,6 +2228,19 @@ func (state *gbtWorkState) notifyLongPollers(latestHash *chainhash.Hash, lastGen
 	// Notify anything that is waiting for a block template update from a
 	// hash which is not the hash of the tip of the best chain since their
 	// work is now invalid.
+
+	touch := func() {
+		//time.Sleep(time.Second)
+		touchFile := filepath.Join(dcrutil.AppDataDir("dcrd", false), "block_notify")
+		f, err := os.Create(touchFile)
+		if err == nil {
+			// open file successful
+			f.Close()
+		}
+		rpcsLog.infof("touch file to notify gbtmaker hash : %s", latestHash.String())
+	}
+	defer touch()
+
 	for hash, channels := range state.notifyMap {
 		if !hash.IsEqual(latestHash) {
 			for _, c := range channels {
