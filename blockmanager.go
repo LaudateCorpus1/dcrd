@@ -1151,7 +1151,7 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 				}
 				bmgrLog.Warnf("touch file to notify gbtmaker hash : %s , height : %n", best.Hash.String(), best.Height)
 			}
-			go touch()
+			defer touch()
 		}
 	}
 
