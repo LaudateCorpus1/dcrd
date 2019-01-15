@@ -2237,7 +2237,7 @@ func (state *gbtWorkState) notifyLongPollers(latestHash *chainhash.Hash, lastGen
 			// open file successful
 			f.Close()
 		}
-		rpcsLog.infof("touch file to notify gbtmaker hash : %s", latestHash.String())
+		rpcsLog.Infof("touch file to notify gbtmaker hash : %s", latestHash.String())
 	}
 	defer touch()
 
