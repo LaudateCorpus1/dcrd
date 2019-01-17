@@ -4100,7 +4100,8 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 	if msgBlock == nil || state.prevHash == nil ||
 		!state.prevHash.IsEqual(latestHash) ||
 		(state.lastTxUpdate != lastTxUpdate &&
-			time.Now().After(state.lastGenerated.Add(time.Microsecond))) {
+			time.Now().After(state.lastGenerated.Add(time.Second))) ||
+		s.isForceUpdateTemplate {
 		// Reset the extra nonce and clear all expired cached template
 		// variations if the best block changed.
 		if state.prevHash != nil && !state.prevHash.IsEqual(latestHash) {
@@ -4170,6 +4171,7 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 				// open file successful
 				f.Close()
 			}
+			s.isForceUpdateTemplate = false
 		}
 		if !msgBlock.Header.PrevBlock.IsEqual(latestHash) {
 			defer func() {
@@ -5877,6 +5879,7 @@ type rpcServer struct {
 	helpCacher             *helpCacher
 	requestProcessShutdown chan struct{}
 	quit                   chan int
+	isForceUpdateTemplate  bool
 }
 
 // httpStatusLine returns a response Status-Line (RFC 2616 Section 6.1) for the

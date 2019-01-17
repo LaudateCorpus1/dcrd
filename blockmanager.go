@@ -1140,6 +1140,7 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 			rpcServer := b.server.rpcServer
 			if rpcServer != nil {
 				rpcServer.gbtWorkState.NotifyBlockConnected(blockHash)
+				rpcServer.isForceUpdateTemplate = true
 			}
 		}
 	}
