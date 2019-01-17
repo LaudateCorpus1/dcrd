@@ -2237,7 +2237,7 @@ func (state *gbtWorkState) notifyLongPollers(latestHash *chainhash.Hash, lastGen
 			// open file successful
 			f.Close()
 		}
-		rpcsLog.Infof("touch file to notify gbtmaker hash : %s", latestHash.String())
+		rpcsLog.Infof("Blockin : touch file . first touch : %s", latestHash.String())
 	}
 	defer touch()
 
@@ -4134,32 +4134,6 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 		templateCopy := deepCopyBlockTemplate(template)
 		msgBlock = templateCopy.Block
 
-		loopForNewHeight := func() {
-			for {
-				children, err := s.server.blockManager.TipGeneration()
-				if err != nil {
-					rpcsLog.Infof("Obtain the entire generation of blocks stemming from this parent error")
-					continue
-				}
-				var txSource mining.TxSource = s.server.txMemPool
-				eligibleParents := SortParentsByVotes(txSource, *latestHash, children,
-					s.server.chainParams)
-				if len(eligibleParents) != 0 {
-					break
-				}
-				time.Sleep(time.Microsecond * 100)
-			}
-			touchFile := filepath.Join(dcrutil.AppDataDir("dcrd", false), "block_notify")
-			f, err := os.Create(touchFile)
-			if err == nil {
-				// open file successful
-				f.Close()
-			}
-			rpcsLog.Infof("touch file to notify gbtmaker hash : %s", latestHash.String())
-		}
-		if !msgBlock.Header.PrevBlock.IsEqual(latestHash) {
-			go loopForNewHeight()
-		}
 		// Update work state to ensure another block template isn't
 		// generated until needed.
 		state.msgBlock = msgBlock
@@ -4172,6 +4146,36 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 			msgBlock.Header.Timestamp, state.extraNonce,
 			blockchain.CompactToBig(msgBlock.Header.Bits),
 			msgBlock.Header.MerkleRoot)
+
+		loopForNewHeight := func() {
+			for {
+				LHash, _ := s.server.blockManager.chainState.Best()
+				children, err := s.server.blockManager.TipGeneration()
+				if err != nil {
+					rpcsLog.Infof("Obtain the entire generation of blocks stemming from this parent error")
+					continue
+				}
+				var txSource mining.TxSource = s.server.txMemPool
+				eligibleParents := SortParentsByVotes(txSource, *LHash, children,
+					s.server.chainParams)
+				if len(eligibleParents) >= 0 {
+					break
+					rpcsLog.Infof("Blockin : touch file to notify gbtmaker hash : %s", LHash.String())
+				}
+				time.Sleep(time.Microsecond * 100)
+			}
+			touchFile := filepath.Join(dcrutil.AppDataDir("dcrd", false), "block_notify")
+			f, err := os.Create(touchFile)
+			if err == nil {
+				// open file successful
+				f.Close()
+			}
+		}
+		if !msgBlock.Header.PrevBlock.IsEqual(latestHash) {
+			defer func() {
+				go loopForNewHeight()
+			}()
+		}
 	} else {
 		if msgBlock == nil {
 			context := "Failed to create new block template, " +
