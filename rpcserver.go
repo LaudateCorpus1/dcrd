@@ -4100,7 +4100,7 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 	if msgBlock == nil || state.prevHash == nil ||
 		!state.prevHash.IsEqual(latestHash) ||
 		(state.lastTxUpdate != lastTxUpdate &&
-			time.Now().After(state.lastGenerated.Add(time.Second))) {
+			time.Now().After(state.lastGenerated.Add(time.Microsecond))) {
 		// Reset the extra nonce and clear all expired cached template
 		// variations if the best block changed.
 		if state.prevHash != nil && !state.prevHash.IsEqual(latestHash) {
@@ -4159,8 +4159,8 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 				eligibleParents := SortParentsByVotes(txSource, *LHash, children,
 					s.server.chainParams)
 				if len(eligibleParents) >= 0 {
-					break
 					rpcsLog.Infof("Blockin : touch file to notify gbtmaker hash : %s", LHash.String())
+					break
 				}
 				time.Sleep(time.Microsecond * 100)
 			}
