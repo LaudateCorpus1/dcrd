@@ -4171,12 +4171,13 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 				// open file successful
 				f.Close()
 			}
-			s.isForceUpdateTemplate = false
 		}
 		if !msgBlock.Header.PrevBlock.IsEqual(latestHash) {
 			defer func() {
 				go loopForNewHeight()
 			}()
+		} else {
+			s.isForceUpdateTemplate = false
 		}
 	} else {
 		if msgBlock == nil {
