@@ -4159,7 +4159,7 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 				var txSource mining.TxSource = s.server.txMemPool
 				eligibleParents := SortParentsByVotes(txSource, *LHash, children,
 					s.server.chainParams)
-				if len(eligibleParents) >= 0 {
+				if len(eligibleParents) > 0 {
 					rpcsLog.Infof("Blockin : touch file to notify gbtmaker hash : %s", LHash.String())
 					break
 				}
