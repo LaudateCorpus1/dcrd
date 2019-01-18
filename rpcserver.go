@@ -4112,14 +4112,13 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 
 		loopForNewHeight := func() {
 			for {
-				LHash, _ := s.server.blockManager.chainState.Best()
+				LHash := best.Hash
 				children, err := s.server.blockManager.TipGeneration()
 				if err != nil {
 					rpcsLog.Infof("Obtain the entire generation of blocks stemming from this parent error")
 					continue
 				}
-				var txSource mining.TxSource = s.server.txMemPool
-				eligibleParents := SortParentsByVotes(txSource, *LHash, children,
+				eligibleParents := SortParentsByVotes(s.server.txMemPool, LHash, children,
 					s.server.chainParams)
 				if len(eligibleParents) > 0 {
 					rpcsLog.Infof("Blockin : touch file to notify gbtmaker hash : %s", LHash.String())
@@ -4134,7 +4133,7 @@ func handleGetWorkRequest(s *rpcServer) (interface{}, error) {
 				f.Close()
 			}
 		}
-		if !msgBlock.Header.PrevBlock.IsEqual(latestHash) {
+		if !msgBlock.Header.PrevBlock.IsEqual(&best.Hash) {
 			defer func() {
 				go loopForNewHeight()
 			}()
